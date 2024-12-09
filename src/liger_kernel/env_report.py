@@ -43,6 +43,14 @@ def print_env_report():
     except ImportError:
         print("Transformers: Not installed")
 
+    try:
+        xpu_version = (
+            torch.version.xpu if torch.xpu.is_available() else "XPU Not Available"
+        )
+        print(f"XPU version: {xpu_version}")
+    except ImportError:
+        print("XPU version: Unable to query")
+
 
 if __name__ == "__main__":
     print_env_report()

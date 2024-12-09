@@ -37,9 +37,16 @@
             </a>
         </td>
         <td style="padding: 10px;">
-            <a href="https://github.com/linkedin/Liger-Kernel/actions/workflows/ci.yml">
-                <img src="https://github.com/linkedin/Liger-Kernel/actions/workflows/ci.yml/badge.svg?event=schedule" alt="Build">
-            </a>
+            <div style="display: block;">
+                <a href="https://github.com/linkedin/Liger-Kernel/actions/workflows/nvi-ci.yml">
+                    <img src="https://github.com/linkedin/Liger-Kernel/actions/workflows/nvi-ci.yml/badge.svg?event=schedule" alt="Build">
+                </a>
+            </div>
+            <div style="display: block;">
+                <a href="https://github.com/linkedin/Liger-Kernel/actions/workflows/amd-ci.yml">
+                    <img src="https://github.com/linkedin/Liger-Kernel/actions/workflows/amd-ci.yml/badge.svg?event=schedule" alt="Build">
+                </a>
+            </div>
         </td>
     </tr>
 </table>
@@ -136,6 +143,8 @@ To install from source:
 git clone https://github.com/linkedin/Liger-Kernel.git
 cd Liger-Kernel
 pip install -e .
+# or if installing on amd platform
+pip install -e .[amd] --extra-index-url https://download.pytorch.org/whl/nightly/rocm6.2 # rocm6.2
 # or if using transformers
 pip install -e .[transformers]
 ```

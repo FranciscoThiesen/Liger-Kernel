@@ -49,8 +49,12 @@ def bench_memory_fused_linear_cpo_loss(
     dtype = input.extra_benchmark_config["dtype"]
     provider = input.kernel_provider
 
-    torch_lm_head_cpo = TorchLMHeadCPO(H=H, V=V, dtype=dtype).to(device)
-    liger_lm_head_cpo = LigerLMHeadCPO(H=H, V=V, dtype=dtype).to(device)
+    torch_lm_head_cpo = lambda x, target: TorchLMHeadCPO(H=H, V=V, dtype=dtype).to(
+        device
+    )(x, target)[0]
+    liger_lm_head_cpo = lambda x, target: LigerLMHeadCPO(H=H, V=V, dtype=dtype).to(
+        device
+    )(x, target)[0]
 
     _input = torch.randn(B, T, H, requires_grad=True, dtype=dtype, device=device)
     target = torch.randint(V, (B, T), dtype=torch.long, device=device)
@@ -62,9 +66,8 @@ def bench_memory_fused_linear_cpo_loss(
             return torch_lm_head_cpo(_input, target)
 
     def full():
-        losses = fwd()
-        loss = losses[0]
-        loss.backward()
+        y = fwd()
+        y.backward()
 
     mem_50, mem_20, mem_80 = _test_memory(full, _iter=10, quantiles=QUANTILES)
     return SingleBenchmarkRunOutput(
@@ -92,8 +95,12 @@ def bench_speed_fused_linear_cpo_loss(
     provider = input.kernel_provider
     mode = input.kernel_operation_mode
 
-    torch_lm_head_cpo = TorchLMHeadCPO(H=H, V=V, dtype=dtype).to(device)
-    liger_lm_head_cpo = LigerLMHeadCPO(H=H, V=V, dtype=dtype).to(device)
+    torch_lm_head_cpo = lambda x, target: TorchLMHeadCPO(H=H, V=V, dtype=dtype).to(
+        device
+    )(x, target)[0]
+    liger_lm_head_cpo = lambda x, target: LigerLMHeadCPO(H=H, V=V, dtype=dtype).to(
+        device
+    )(x, target)[0]
 
     _input = torch.randn(B, T, H, requires_grad=True, dtype=dtype, device=device)
     target = torch.randint(V, (B, T), dtype=torch.long, device=device)
@@ -111,10 +118,10 @@ def bench_speed_fused_linear_cpo_loss(
             quantiles=QUANTILES,
         )
     elif mode == "backward":
-        losses = fwd()
+        y = fwd()
 
         ms_50, ms_20, ms_80 = triton.testing.do_bench(
-            lambda: losses[0].backward(retain_graph=True),
+            lambda: y.backward(retain_graph=True),
             grad_to_none=[_input],
             rep=100,
             quantiles=QUANTILES,
@@ -122,9 +129,8 @@ def bench_speed_fused_linear_cpo_loss(
     elif mode == "full":
 
         def full():
-            losses = fwd()
-            loss = losses[0]
-            loss.backward()
+            y = fwd()
+            y.backward()
 
         ms_50, ms_20, ms_80 = triton.testing.do_bench(
             full,

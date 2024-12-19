@@ -90,7 +90,19 @@ def _rms_norm_forward_kernel(
         eps = eps.to(X_row_dtype)
         offset = offset.to(X_row_dtype)
 
-    mean_square = tl.sum(X_row * X_row, axis=0) / n_cols
+    mean_square = 0.0
+    # Number of chunks needed to cover the entire row
+    num_chunks = (n_cols + BLOCK_SIZE - 1) // BLOCK_SIZE
+
+    # We can re-use 'col_offsets' in each iteration to cover the whole row
+    for chunk_id in range(num_chunks):
+        chunk_start = chunk_id * BLOCK_SIZE
+        chunk_cols = chunk_start + col_offsets
+        chunk_mask = chunk_cols < n_cols
+        X_chunk = tl.load(X_ptr + chunk_cols, mask=chunk_mask, other=0)
+        mean_square += tl.sum(X_chunk * X_chunk)
+
+    mean_square /= n_cols
     rstd = rsqrt(mean_square + eps)
 
     # We can save time by caching rms with minimal memory overhead
